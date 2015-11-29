@@ -49,6 +49,7 @@ params: -i <input file>
     [--ignore-list <ingored list file>] 
     [--extra-transformations <transformations config file>]
     [--mixed-content <mixed list file>]
+    [--post-process-ascii]
 ```
 
 * **input file** - Name of the Excel file for importing into the project
@@ -62,6 +63,7 @@ optional escaping).
 * **ingored list file** - Optional file for defining string keys that are ignored.
 * **transformations config file** - Optional file for defining import tranformations on strings for each key.
 * **mixed list file** - Optional file containing keys of string which will be handled as mixed xml content when importing (strings are by default handled as text content).
+* **post-process-ascii** - Optional flag to perform a post processing on xml file in order to convert some special characters like 1/4, 1/2, 3/4, "...".
 
 #### Format of splitting configuration file
 
