@@ -1,6 +1,11 @@
 package cz.tomaskypta.tools.langtool.importing;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import javax.xml.parsers.DocumentBuilder;
@@ -20,6 +25,7 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.util.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -91,6 +97,7 @@ public class ToolImport {
 
 
         tool.outResDir = new File(projectDir, "/res");
+        tool.out.println("import into : "+projectDir+"/res");
         //tool.outResDir.mkdirs();
         tool.parse(sheet);
     }
@@ -170,7 +177,7 @@ public class ToolImport {
                 Cell valueCell = row.getCell(column);
                 String value = "";
                 if (valueCell != null) {
-                    value = valueCell.toString();// value
+                    value = valueCell.toString();// value                    
                 }
                 String plurarNameNew = key.substring(0, plurarIndex);
                 String quantity = key.substring(plurarIndex + 1);
@@ -201,7 +208,7 @@ public class ToolImport {
                     stringArrayNode = dom.createElement("string-array");
                     stringArrayNode.setAttribute("name", arrayName);
                 }
-
+                
                 value = prepareOutputValue(lang, key, value);
                 addContent(dom, stringArrayNode, value, "item", null, null);
 
@@ -214,13 +221,13 @@ public class ToolImport {
                     continue;
                 }
                 String value = valueCell.toString();// value
-
+                
                 if (value.isEmpty()) {
                     addEmptyKeyValue(dom, root, key);
                 } else {
 
                     value = prepareOutputValue(lang, key, value);
-
+                    
                     addContent(dom, root, value, "string", key, null);
                 }
             }
@@ -243,24 +250,21 @@ public class ToolImport {
             // TODO improve
             // currently ignoring errors - there were irrelevant messages about '&'
             db.setErrorHandler(new ErrorHandler() {
-                @Override
                 public void warning(SAXParseException exception) throws SAXException {
 
                 }
 
-                @Override
                 public void error(SAXParseException exception) throws SAXException {
 
                 }
 
-                @Override
                 public void fatalError(SAXParseException exception) throws SAXException {
 
                 }
             });
             Element content = db
                 .parse(new ByteArrayInputStream(("<" + nodeName + ">" + value + "</" + nodeName + ">").getBytes()))
-                .getDocumentElement();
+                .getDocumentElement();            
             if (key != null) {
                 content.setAttribute("name", key);
             }
@@ -270,7 +274,7 @@ public class ToolImport {
             Node tmp = dom.importNode(content, true);
             root.appendChild(tmp);
         } catch (Exception e) {
-            addContentAsString(dom, root, value, nodeName, key, quantity);
+            addContentAsString(dom, root, value, nodeName, key, quantity);            
         }
     }
 
@@ -281,7 +285,7 @@ public class ToolImport {
         }
         if (quantity != null) {
             node.setAttribute("quantity", quantity);
-        }
+        }        
         node.setTextContent(value);
         root.appendChild(node);
     }
@@ -291,6 +295,7 @@ public class ToolImport {
         if (tranformation != null) {
             value = tranformation.apply(value, lang);
         }
+        
         if (mConfig.unescapeFirst) {
             value = EscapingUtils.unescapeQuotes(value);
         }
@@ -298,7 +303,7 @@ public class ToolImport {
             value = EscapingUtils.escapeWithQuotes(value);
         } else {
             value = EscapingUtils.escapeWithBackslash(value);
-        }
+        }        
         return value;
     }
 
@@ -314,6 +319,7 @@ public class ToolImport {
             dir = new File(outResDir, "values-" + lang);
         }
         dir.mkdir();
+        out.println("import into : "+dir.toString());
 
         //DOMUtils.prettyPrint(doc);
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -321,9 +327,22 @@ public class ToolImport {
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 
-        DOMSource source = new DOMSource(doc);
-        StreamResult result = new StreamResult(new File(dir, mConfig.outputFileName));
+        DOMSource source = new DOMSource(doc);  
+        File resultFile = new File(dir, mConfig.outputFileName);
+        StreamResult result = new StreamResult(resultFile);
 
-        transformer.transform(source, result);
+        transformer.transform(source, result);        
+        
+        if (mConfig.postProcessAscii){
+	        Path path = Paths.get(resultFile.getAbsolutePath());
+	        Charset charset = StandardCharsets.UTF_8;
+	        try {        	
+	        	String content = new String(Files.readAllBytes(path), charset);
+	        	content = EscapingUtils.postProcessorStrings(content);        
+				Files.write(path, content.getBytes(charset));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        }
     }
 }
