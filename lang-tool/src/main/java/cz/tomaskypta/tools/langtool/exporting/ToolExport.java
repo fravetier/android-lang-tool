@@ -143,7 +143,7 @@ public class ToolExport {
         return dom.getDocumentElement().getChildNodes();
     }
 
-    private static HSSFCellStyle createTilteStyle(HSSFWorkbook wb) {
+    private static HSSFCellStyle createTitleStyle(HSSFWorkbook wb) {
         HSSFFont bold = wb.createFont();
         bold.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
 
@@ -215,7 +215,7 @@ public class ToolExport {
         HSSFRow titleRow = sheet.getRow(0);
 
         HSSFCell cell = titleRow.createCell(0);
-        cell.setCellStyle(createTilteStyle(wb));
+        cell.setCellStyle(createTitleStyle(wb));
         cell.setCellValue("KEY");
 
         sheet.setColumnWidth(cell.getColumnIndex(), (40 * 256));
@@ -229,7 +229,7 @@ public class ToolExport {
             return;
         }
         HSSFCell cell = titleRow.createCell((int)titleRow.getLastCellNum());
-        cell.setCellStyle(createTilteStyle(wb));
+        cell.setCellStyle(createTitleStyle(wb));
         cell.setCellValue(lang);
 
         sheet.setColumnWidth(cell.getColumnIndex(), (60 * 256));
@@ -271,7 +271,8 @@ public class ToolExport {
                 if (translatable != null && "false".equals(translatable.getNodeValue())) {
                     continue;
                 }
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                String key = getKey(item);
                 if (mConfig.isIgnoredKey(key)) {
                     continue;
                 }
@@ -287,7 +288,8 @@ public class ToolExport {
                 cell.setCellStyle(textStyle);                
                 cell.setCellValue(UnEscapingUtils.unEscape(item.getTextContent()));
             } else if ("plurals".equals(item.getNodeName())) {
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+            	String key = getKey(item);
                 if (mConfig.isIgnoredKey(key)) {
                     continue;
                 }
@@ -317,7 +319,8 @@ public class ToolExport {
                     }
                 }
             } else if ("string-array".equals(item.getNodeName())) {
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+            	String key = getKey(item);
                 if (mConfig.isIgnoredKey(key)) {
                     continue;
                 }
@@ -352,7 +355,7 @@ public class ToolExport {
 
     private void exportLangToExcel(String project, String lang, File src, NodeList strings, File f, Map<String, Integer> keysIndex) throws FileNotFoundException, IOException {
         out.println();
-        out.println(String.format("Start processing : '%s'", lang) + " " + src.getName());
+        out.println(String.format("Start processing: '%s' %s", lang, src.getName()));
         Set<String> missedKeys = new HashSet<String>(keysIndex.keySet());
 
         HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(f));
@@ -373,7 +376,8 @@ public class ToolExport {
                 if (translatable != null && "false".equals(translatable.getNodeValue())) {
                     continue;
                 }
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                String key = getKey(item);
                 Integer index = keysIndex.get(key);
                 if (index == null) {
                     out.println("\t" + key + " - row does not exist");
@@ -387,14 +391,15 @@ public class ToolExport {
                 cell.setCellValue(UnEscapingUtils.unEscape(item.getTextContent()));
                 cell.setCellStyle(textStyle);
             } else if ("plurals".equals(item.getNodeName())) {
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+            	String key = getKey(item);
                 String plurarName = key;
 
                 NodeList items = item.getChildNodes();
                 for (int j = 0; j < items.getLength(); j++) {
-                    Node plurarItem = items.item(j);
-                    if ("item".equals(plurarItem.getNodeName())) {
-                        key = plurarName + "#" + plurarItem.getAttributes().getNamedItem("quantity").getNodeValue();
+                    Node pluralItem = items.item(j);
+                    if ("item".equals(pluralItem.getNodeName())) {
+                        key = plurarName + "#" + pluralItem.getAttributes().getNamedItem("quantity").getNodeValue();
                         Integer index = keysIndex.get(key);
                         if (index == null) {
                             out.println("\t" + key + " - row does not exist");
@@ -405,12 +410,13 @@ public class ToolExport {
                         HSSFRow row = sheet.getRow(index);
 
                         HSSFCell cell = row.createCell(lastColumnIdx);
-                        cell.setCellValue(UnEscapingUtils.unEscape(plurarItem.getTextContent()));
+                        cell.setCellValue(UnEscapingUtils.unEscape(pluralItem.getTextContent()));
                         cell.setCellStyle(textStyle);
                     }
                 }
             } else if ("string-array".equals(item.getNodeName())) {
-                String key = item.getAttributes().getNamedItem("name").getNodeValue();
+                //String key = item.getAttributes().getNamedItem("name").getNodeValue();
+            	String key = getKey(item);
                 NodeList arrayItems = item.getChildNodes();
                 for (int j = 0, k = 0; j < arrayItems.getLength(); j++) {
                     Node arrayItem = arrayItems.item(j);
@@ -456,4 +462,19 @@ public class ToolExport {
             out.println(String.format("'%s' was processed with MISSED KEYS - %d", lang, missedKeys.size()));
         }
     }
+    
+	private String getKey(Node item) {
+		String key = item.getAttributes().getNamedItem("name").getNodeValue();
+		NodeList nodes = item.getChildNodes();
+		if (nodes.getLength() == 0) {
+			throw new IllegalArgumentException("Unpredictable node format at " + item);
+		}
+		Node text = nodes.item(0);
+		out.println("cdata:"+key + text.getNodeType() + " =?"+Node.CDATA_SECTION_NODE);
+		if (text.getNodeType() == Node.CDATA_SECTION_NODE) {
+			key += "!cdata";
+			
+		}
+		return key;
+	}
 }
