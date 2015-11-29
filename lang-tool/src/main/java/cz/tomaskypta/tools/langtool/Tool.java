@@ -54,6 +54,6 @@ public class Tool {
         System.out.println("\texport: -e <project dir> [-o <output file>] [--additional-resources <colon separated " +
             "list of additional resources>]");
         System.out.println("\timport: -i <input file> [-s <splitting config>] [-m <mapping file>] [--escaping-config " +
-            "<escaping config file>] [--unescape-before-escaping] [--ignore-list <ingored list file>]");
+            "<escaping config file>] [--unescape-before-escaping] [--ignore-list <ingored list file>] [--post-process-ascii]");
     }
 }

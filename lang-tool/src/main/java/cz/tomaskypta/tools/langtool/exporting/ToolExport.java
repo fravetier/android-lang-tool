@@ -15,6 +15,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import cz.tomaskypta.tools.langtool.util.UnEscapingUtils;
+
 
 public class ToolExport {
 
@@ -64,7 +66,7 @@ public class ToolExport {
     private void export(File project) throws SAXException, IOException {
         File res = findResourceDir(project);
         if (res == null) {
-            System.err.println("Cannot find resource directory.");
+            System.err.println("Cannot find resource directory (in "+StringUtils.join(POTENTIAL_RES_DIRS, ", ")+")");
             return;
         }
         for (File dir : res.listFiles()) {
@@ -282,8 +284,8 @@ public class ToolExport {
                 cell.setCellStyle(keyStyle);
 
                 cell = row.createCell(1);
-                cell.setCellStyle(textStyle);
-                cell.setCellValue(item.getTextContent());
+                cell.setCellStyle(textStyle);                
+                cell.setCellValue(UnEscapingUtils.unEscape(item.getTextContent()));
             } else if ("plurals".equals(item.getNodeName())) {
                 String key = item.getAttributes().getNamedItem("name").getNodeValue();
                 if (mConfig.isIgnoredKey(key)) {
@@ -311,7 +313,7 @@ public class ToolExport {
 
                         itemCell = itemRow.createCell(1);
                         itemCell.setCellStyle(textStyle);
-                        itemCell.setCellValue(plurarItem.getTextContent());
+                        itemCell.setCellValue(UnEscapingUtils.unEscape(plurarItem.getTextContent()));
                     }
                 }
             } else if ("string-array".equals(item.getNodeName())) {
@@ -334,7 +336,7 @@ public class ToolExport {
 
                         itemCell = itemRow.createCell(1);
                         itemCell.setCellStyle(textStyle);
-                        itemCell.setCellValue(arrayItem.getTextContent());
+                        itemCell.setCellValue(UnEscapingUtils.unEscape(arrayItem.getTextContent()));
                     }
                 }
             }
@@ -344,13 +346,13 @@ public class ToolExport {
         wb.write(outFile);
         outFile.close();
 
-        out.println("DEFAULT language was precessed");
+        out.println("DEFAULT language was processed");
         return keys;
     }
 
     private void exportLangToExcel(String project, String lang, File src, NodeList strings, File f, Map<String, Integer> keysIndex) throws FileNotFoundException, IOException {
         out.println();
-        out.println(String.format("Start processing: '%s'", lang) + " " + src.getName());
+        out.println(String.format("Start processing : '%s'", lang) + " " + src.getName());
         Set<String> missedKeys = new HashSet<String>(keysIndex.keySet());
 
         HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(f));
@@ -382,7 +384,7 @@ public class ToolExport {
                 HSSFRow row = sheet.getRow(index);
 
                 HSSFCell cell = row.createCell(lastColumnIdx);
-                cell.setCellValue(item.getTextContent());
+                cell.setCellValue(UnEscapingUtils.unEscape(item.getTextContent()));
                 cell.setCellStyle(textStyle);
             } else if ("plurals".equals(item.getNodeName())) {
                 String key = item.getAttributes().getNamedItem("name").getNodeValue();
@@ -403,7 +405,7 @@ public class ToolExport {
                         HSSFRow row = sheet.getRow(index);
 
                         HSSFCell cell = row.createCell(lastColumnIdx);
-                        cell.setCellValue(plurarItem.getTextContent());
+                        cell.setCellValue(UnEscapingUtils.unEscape(plurarItem.getTextContent()));
                         cell.setCellStyle(textStyle);
                     }
                 }
@@ -424,7 +426,7 @@ public class ToolExport {
                         HSSFRow itemRow = sheet.getRow(rowIndex);
 
                         HSSFCell cell = itemRow.createCell(lastColumnIdx);
-                        cell.setCellValue(arrayItem.getTextContent());
+                        cell.setCellValue(UnEscapingUtils.unEscape(arrayItem.getTextContent()));
                         cell.setCellStyle(textStyle);
                     }
                 }

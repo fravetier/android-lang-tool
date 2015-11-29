@@ -37,6 +37,8 @@ public class CommandlineArguments {
     String extraTransformations;
     @Parameter(names = "--mixed-content", description = "List of mixed content keys.")
     String mixedContent;
+    @Parameter(names = "--post-process-ascii", description = "For postProcessing some ascii characters after xml is generated")
+    boolean postProcessAscii;
 
     public String getExportProject() {
         return exportProject;
@@ -81,4 +83,9 @@ public class CommandlineArguments {
     public String getMixedContent() {
         return mixedContent;
     }
+
+	public boolean isPostProcessAscii() {
+		return postProcessAscii;
+	}
+    
 }

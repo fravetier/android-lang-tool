@@ -61,6 +61,7 @@ public class ImportConfig extends CommonConfig {
     private Map<String, Transformation> transformationsMap;
     public String mixedContent;
     private Set<String> mixedContentSet;
+    public boolean postProcessAscii;
 
 
     public ImportConfig() {
@@ -83,6 +84,7 @@ public class ImportConfig extends CommonConfig {
         this.extraTransformations = other.extraTransformations;
         this.mixedContent = other.mixedContent;
         this.mixedContentSet = new HashSet<String>(other.mixedContentSet);
+        this.postProcessAscii = other.postProcessAscii;
     }
 
     public ImportConfig(CommandlineArguments args) {
@@ -96,6 +98,7 @@ public class ImportConfig extends CommonConfig {
         this.unescapeFirst = args.isUnescapeFirst();
         this.setTransformations(args.getExtraTransformations());
         this.setMixedContent(args.getMixedContent());
+        this.postProcessAscii = args.isPostProcessAscii();
     }
 
     public Boolean isEscapedKey(String key) {
